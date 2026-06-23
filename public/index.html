@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quote App</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 600px;
+      padding: 40px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .tab-btn {
+      padding: 12px 20px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .tab-btn.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .quote-box {
+      background: #f8f9fa;
+      padding: 40px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 30px;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .quote-text {
+      font-size: 24px;
+      font-style: italic;
+      color: #333;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .quote-author {
+      font-size: 16px;
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #eee;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    button {
+      background: #667eea;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #5568d3;
+    }
+
+    .quotes-list {
+      display: grid;
+      gap: 15px;
+    }
+
+    .quote-item {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .quote-item-text {
+      font-style: italic;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .quote-item-author {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .delete-btn {
+      background: #ff6b6b;
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+
+    .delete-btn:hover {
+      background: #ee5a52;
+    }
+
+    .message {
+      text-align: center;
+      color: #667eea;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📝 Quote App</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('home')">Today's Quote</button>
+      <button class="tab-btn" onclick="switchTab('add')">Add Quote</button>
+      <button class="tab-btn" onclick="switchTab('all')">All Quotes</button>
+    </div>
+
+    <!-- Home Tab -->
+    <div id="home" class="tab-content active">
+      <div class="quote-box">
+        <div class="quote-text" id="dailyQuote">"Loading..."</div>
+        <div class="quote-author" id="dailyAuthor">-</div>
+      </div>
+      <button onclick="loadRandomQuote()" style="width: 100%;">Get New Quote</button>
+    </div>
+
+    <!-- Add Quote Tab -->
+    <div id="add" class="tab-content">
+      <div class="form-group">
+        <label>Quote</label>
+        <textarea id="quoteText" placeholder="Enter the quote here..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Author</label>
+        <input type="text" id="quoteAuthor" placeholder="Who said it?">
+      </div>
+      <button onclick="addQuote()" style="width: 100%;">Save Quote</button>
+      <div class="message" id="addMessage"></div>
+    </div>
+
+    <!-- All Quotes Tab -->
+    <div id="all" class="tab-content">
+      <div class="quotes-list" id="quotesList"></div>
+      <div class="message" id="allMessage"></div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+      // Show selected tab
+      document.getElementById(tabName).classList.add('active');
+      event.target.classList.add('active');
+
+      // Load data if needed
+      if (tabName === 'all') {
+        loadAllQuotes();
+      }
+    }
+
+    async function loadRandomQuote() {
+      try {
+        const response = await fetch('/api/random-quote');
+        const quote = await response.json();
+        document.getElementById('dailyQuote').textContent = `"${quote.text}"`;
+        document.getElementById('dailyAuthor').textContent = quote.author ? `— ${quote.author}` : '—';
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    async function addQuote() {
+      const text = document.getElementById('quoteText').value;
+      const author = document.getElementById('quoteAuthor').value;
+
+      if (!text) {
+        document.getElementById('addMessage').textContent = 'Please enter a quote!';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/quotes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, author })
+        });
+
+        if (response.ok) {
+          document.getElementById('addMessage').textContent = '✓ Quote saved!';
+          document.getElementById('quoteText').value = '';
+          document.getElementById('quoteAuthor').value = '';
+          setTimeout(() => {
+            document.getElementById('addMessage').textContent = '';
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('addMessage').textContent = 'Error saving quote';
+      }
+    }
+
+    async function loadAllQuotes() {
+      try {
+        const response = await fetch('/api/quotes');
+        const quotes = await response.json();
+
+        const quotesList = document.getElementById('quotesList');
+        const allMessage = document.getElementById('allMessage');
+
+        if (quotes.length === 0) {
+          quotesList.innerHTML = '';
+          allMessage.textContent = 'No quotes yet. Add one!';
+          return;
+        }
+
+        allMessage.textContent = '';
+        quotesList.innerHTML = quotes.map(quote => `
+          <div class="quote-item">
+            <div class="quote-item-text">"${quote.text}"</div>
+            <div class="quote-item-author">— ${quote.author || 'Unknown'}</div>
+            <button class="delete-btn" onclick="deleteQuote('${quote._id}')">Delete</button>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    async function deleteQuote(id) {
+      try {
+        await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
+        loadAllQuotes();
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+
+    // Load random quote on page load
+    window.onload = loadRandomQuote;
+  </script>
+</body>
+</html>
