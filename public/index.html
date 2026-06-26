@@ -72,11 +72,113 @@
       padding: 40px;
       border-radius: 10px;
       text-align: center;
-      margin-bottom: 30px;
       min-height: 200px;
       display: flex;
       flex-direction: column;
       justify-content: center;
+    }
+
+    .quote-nav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .nav-arrow {
+      background: none;
+      border: none;
+      color: #bbb;
+      font-size: 28px;
+      line-height: 1;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .nav-arrow:hover:not(:disabled) {
+      background: none;
+      color: #667eea;
+    }
+
+    .nav-arrow:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .fab-add {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #667eea;
+      color: white;
+      border: none;
+      font-size: 28px;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.45);
+      transition: background 0.2s, transform 0.2s;
+      z-index: 100;
+    }
+
+    .fab-add:hover {
+      background: #5568d3;
+      transform: scale(1.05);
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      z-index: 200;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 15px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .modal-header h2 {
+      font-size: 20px;
+      color: #333;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #999;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      background: none;
+      color: #333;
     }
 
     .quote-text {
@@ -184,9 +286,8 @@
     <h1>📝 Quote App</h1>
 
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('home')">Today's Quote</button>
-      <button class="tab-btn" onclick="switchTab('add')">Add Quote</button>
-      <button class="tab-btn" onclick="switchTab('all')">All Quotes</button>
+      <button class="tab-btn active" onclick="switchTab('home', this)">Today's Quote</button>
+      <button class="tab-btn" onclick="switchTab('all', this)">All Quotes</button>
     </div>
 
     <!-- Home Tab -->
@@ -195,11 +296,27 @@
         <div class="quote-text" id="dailyQuote">"Loading..."</div>
         <div class="quote-author" id="dailyAuthor">-</div>
       </div>
-      <button onclick="loadRandomQuote()" style="width: 100%;">Get New Quote</button>
+      <div class="quote-nav">
+        <button class="nav-arrow" id="prevQuote" onclick="prevQuote()" aria-label="Previous quote">‹</button>
+        <button class="nav-arrow" id="nextQuote" onclick="nextQuote()" aria-label="Next quote">›</button>
+      </div>
     </div>
 
-    <!-- Add Quote Tab -->
-    <div id="add" class="tab-content">
+    <!-- All Quotes Tab -->
+    <div id="all" class="tab-content">
+      <div class="quotes-list" id="quotesList"></div>
+      <div class="message" id="allMessage"></div>
+    </div>
+  </div>
+
+  <button class="fab-add" onclick="openAddModal()" aria-label="Add quote">+</button>
+
+  <div class="modal-overlay" id="addModal" onclick="closeAddModalOnBackdrop(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Add Quote</h2>
+        <button class="modal-close" onclick="closeAddModal()" aria-label="Close">&times;</button>
+      </div>
       <div class="form-group">
         <label>Quote</label>
         <textarea id="quoteText" placeholder="Enter the quote here..."></textarea>
@@ -211,36 +328,80 @@
       <button onclick="addQuote()" style="width: 100%;">Save Quote</button>
       <div class="message" id="addMessage"></div>
     </div>
-
-    <!-- All Quotes Tab -->
-    <div id="all" class="tab-content">
-      <div class="quotes-list" id="quotesList"></div>
-      <div class="message" id="allMessage"></div>
-    </div>
   </div>
 
   <script>
-    function switchTab(tabName) {
-      // Hide all tabs
+    let quotes = [];
+    let currentIndex = 0;
+
+    function switchTab(tabName, btn) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
-      // Show selected tab
       document.getElementById(tabName).classList.add('active');
-      event.target.classList.add('active');
+      btn.classList.add('active');
 
-      // Load data if needed
       if (tabName === 'all') {
         loadAllQuotes();
+      } else if (tabName === 'home') {
+        loadQuotes();
       }
     }
 
-    async function loadRandomQuote() {
+    function openAddModal() {
+      document.getElementById('addModal').classList.add('open');
+      document.getElementById('quoteText').focus();
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.remove('open');
+      document.getElementById('addMessage').textContent = '';
+    }
+
+    function closeAddModalOnBackdrop(event) {
+      if (event.target.id === 'addModal') {
+        closeAddModal();
+      }
+    }
+
+    function displayQuote(index) {
+      if (quotes.length === 0) {
+        document.getElementById('dailyQuote').textContent = '"No quotes yet. Add one!"';
+        document.getElementById('dailyAuthor').textContent = '—';
+        document.getElementById('prevQuote').disabled = true;
+        document.getElementById('nextQuote').disabled = true;
+        return;
+      }
+
+      const quote = quotes[index];
+      document.getElementById('dailyQuote').textContent = `"${quote.text}"`;
+      document.getElementById('dailyAuthor').textContent = quote.author ? `— ${quote.author}` : '—';
+
+      const singleQuote = quotes.length === 1;
+      document.getElementById('prevQuote').disabled = singleQuote;
+      document.getElementById('nextQuote').disabled = singleQuote;
+    }
+
+    function prevQuote() {
+      if (quotes.length <= 1) return;
+      currentIndex = (currentIndex - 1 + quotes.length) % quotes.length;
+      displayQuote(currentIndex);
+    }
+
+    function nextQuote() {
+      if (quotes.length <= 1) return;
+      currentIndex = (currentIndex + 1) % quotes.length;
+      displayQuote(currentIndex);
+    }
+
+    async function loadQuotes() {
       try {
-        const response = await fetch('/api/random-quote');
-        const quote = await response.json();
-        document.getElementById('dailyQuote').textContent = `"${quote.text}"`;
-        document.getElementById('dailyAuthor').textContent = quote.author ? `— ${quote.author}` : '—';
+        const response = await fetch('/api/quotes');
+        quotes = await response.json();
+        if (currentIndex >= quotes.length) {
+          currentIndex = Math.max(0, quotes.length - 1);
+        }
+        displayQuote(currentIndex);
       } catch (error) {
         console.error('Error:', error);
       }
@@ -263,12 +424,12 @@
         });
 
         if (response.ok) {
-          document.getElementById('addMessage').textContent = '✓ Quote saved!';
           document.getElementById('quoteText').value = '';
           document.getElementById('quoteAuthor').value = '';
-          setTimeout(() => {
-            document.getElementById('addMessage').textContent = '';
-          }, 2000);
+          closeAddModal();
+          await loadQuotes();
+          currentIndex = quotes.length - 1;
+          displayQuote(currentIndex);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -312,8 +473,7 @@
       }
     }
 
-    // Load random quote on page load
-    window.onload = loadRandomQuote;
+    window.onload = loadQuotes;
   </script>
 </body>
 </html>
