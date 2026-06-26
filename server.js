@@ -12,7 +12,10 @@ let db;
 
 async function startServer() {
   try {
-    const client = await MongoClient.connect(MONGO_URL);
+    const client = await MongoClient.connect(MONGO_URL, {
+      retryWrites: false,
+      maxPoolSize: 1
+    });
     console.log('Connected to MongoDB');
     db = client.db(DB_NAME);
 
