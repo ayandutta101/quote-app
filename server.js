@@ -12,9 +12,14 @@ let db;
 
 async function startServer() {
   try {
-    const client = await MongoClient.connect(MONGO_URL, {
+    const url = MONGO_URL.includes('?')
+      ? MONGO_URL + '&authSource=admin'
+      : MONGO_URL + '?authSource=admin';
+
+    const client = await MongoClient.connect(url, {
       retryWrites: false,
-      maxPoolSize: 1
+      maxPoolSize: 1,
+      serverSelectionTimeoutMS: 10000
     });
     console.log('Connected to MongoDB');
     db = client.db(DB_NAME);
